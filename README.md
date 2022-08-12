@@ -55,30 +55,31 @@ There is currently not a way to use the demo console to perform custom queries. 
 ### Usage basics
 
 Build a new `Combined Query` object by passing in the current database connection:
-```
+```go
 query := db.NewQuery(dbConn)
 ```
 Filter result set using query functions.
-```
+```go
 query = query.AndEQ("username", "nick")
 ```
 Each operation returns an updated combined query object with all prior filters included.
-```
+```go
 query = query.AndEQ("username", "nick")
 query = query.AndGTE("file_size", 50)
 ```
 These can also be chained similar to Django querysets.
 
-```
+```go
 query = query.AndEQ("username", "nick").AndGTE("file_size", 50)
 ```
 To return a list of applicable rows, call the `Rows` function on the combined query to generate a `[]LogRecord` object array that can be iterated over.
-```
+```go
 rows := query.Rows()
 for _, row := range rows {
     fmt.Printf("Timestamp: %s | Username: %s | Upload: %s | File Size: %dkB\n", row.Timestamp.Format(time.UnixDate), row.Username, strconv.FormatBool(row.Upload), row.Size)
 }
-
+```
+```
 Output:
 > Timestamp: Sun Apr 26 02:42:52 +0000 2020 | Username: nick | Upload: true | File Size: 68kB
 > Timestamp: Sun Apr 26 12:28:01 +0000 2020 | Username: nick | Upload: false | File Size: 66kB
@@ -87,61 +88,61 @@ Output:
 ### There are also aggregation functions to allow pulling summarization data.
 
 Count distinct field values:
-```
+```go
 distinctUsers := query.CountDistinct("username")
 ```
 View average of a field in a combined query.  For example, average file size:
-```
+```go
 avgSize := query.Avg("file_size")
 ```
 See how many times a user has uploaded a file:
-```
+```go
 query = query.AndEQ("upload", true)
 query = query.AndEQ("username", "nick")
 uploadCount := query.Count("id")
 ```
 See how many times a list of users has uploaded a file:
-```
+```go
 query = query.AndEQ("upload", true)
 names := []string{"nick", "gumboTheWonderPuppy"}
 query = query.AndIN("username", names)
 uploadCount := query.Count("id")
 ```
 Find the sum of all file sizes of files uploaded with size greater than or equal to 50kB and less than or equal to 55kB:
-```
+```go
 query = query.AndGTE("file_size", 50)
 query = query.AndLTE("file_size", 55)
 summedFilesize := query.Sum("file_size")
 ```
 Filter results by date using a date string, ignoring timestamp:
-```
+```go
 query = query.AndEQ("t_stamp", "2020-04-14", true)  // All filter functions allow an optional trailing parameter to Cast timestamps to dates.
 ```
 Filter results by date using a date/time object, ignoring timestamp:
-```
+```go
 query = query.AndEQ("t_stamp", time.Date(2020, 04, 14, 0, 0, 0, 0, time.UTC), true)  // All filter functions allow an optional trailing parameter to Cast timestamps to dates.
 ```
 Aside from the `AndIN` functions, you also have access to `OR` operations, although currently there is no way to parenthesize/contain their logic, so only useful for simple queries.
 The Following will filter results where `file_size > 50kB OR username = gumboTheWonderPuppy`
-```
+```go
 query = query.AndGTE("file_size", 50)
 query = query.OrEQ("username", "gumboTheWonderPuppy")
 ```
 
 ## *** IMPORTANT NOTE ***
 The first filter whether it's preficed by `And` or `Or` will compile into a `WHERE` clause.  For example:
-```
+```go
 query = query.AndGTE("file_size", 50)
 query = query.OrEQ("username", "gumboTheWonderPuppy")
 ```
 Compiles into:
-```
+```go
 SELECT * FROM `my_table` WHERE `file_size` >= 50 OR `username` = "gumboTheWonderPuppy";
 ```
 ---
 ## Filter Functions
 
-```
+```go
 func (cq *combinedQuery) AndIN(field string, value any, castDate ...bool) *combinedQuery { ... }
 
 func (cq *combinedQuery) AndNotIN(field string, value any, castDate ...bool) *combinedQuery { ... }
@@ -181,7 +182,7 @@ func (cq *combinedQuery) OrNE(field string, value interface{}, castDate ...bool)
 ---
 ## Aggregate Functions
 
-```
+```go
 func (cq *combinedQuery) Sum(field string) int { ... }
 
 func (cq *combinedQuery) Count(field string) int { ... }
@@ -193,7 +194,7 @@ func (cq *combinedQuery) Avg(field string) uint8 { ... }
 ---
 ## List Results Functions
 
-```
+```go
 func (cq *combinedQuery) Rows() []LogRecord { ... }
 ```
 ---
